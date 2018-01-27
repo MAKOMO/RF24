@@ -1074,6 +1074,10 @@ uint8_t RF24::getDynamicPayloadSize(void)
 
 bool RF24::available(void)
 {
+  #if defined (FAILURE_HANDLING)
+    uint8_t pnum;
+    return available(&pnum);
+  #endif
   return available(NULL);
 }
 
@@ -1081,20 +1085,25 @@ bool RF24::available(void)
 
 bool RF24::available(uint8_t* pipe_num)
 {
-  if (!( read_register(FIFO_STATUS) & _BV(RX_EMPTY) )){
+    if (!( read_register(FIFO_STATUS) & _BV(RX_EMPTY) ))
+    {
+         uint8_t status = get_status();
+         uint8_t pipe = ( status >> RX_P_NO ) & 0x07;
+         if(pipe > 5)
+         {
+             // RX_P_NO indicates "RX FIFO Empty" despite RX_EMPTY states "Data in RX FIFO"
+             return 0;
+         }
 
-    // If the caller wants the pipe number, include that
-    if ( pipe_num ){
-	  uint8_t status = get_status();
-      *pipe_num = ( status >> RX_P_NO ) & 0x07;
-  	}
-  	return 1;
-  }
+         // If the caller wants the pipe number, include that
+         if ( pipe_num )
+         {
+             *pipe_num = pipe;
+         }
 
-
+        return 1;
+     }
   return 0;
-
-
 }
 
 /****************************************************************************/
