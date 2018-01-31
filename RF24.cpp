@@ -1092,6 +1092,8 @@ bool RF24::available(uint8_t* pipe_num)
          if(pipe > 5)
          {
              // RX_P_NO indicates "RX FIFO Empty" despite RX_EMPTY states "Data in RX FIFO"
+             // we flush the RX buffer to resolve this for now
+             flush_rx();
              return 0;
          }
 
